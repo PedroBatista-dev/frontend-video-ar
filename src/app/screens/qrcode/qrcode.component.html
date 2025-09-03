@@ -1,0 +1,21 @@
+<div class="screen-container">
+  <div class="content-wrapper" *ngIf="videoUrl">
+    <div class="highlight-box">
+      Sua experiência foi incrível!
+    </div>
+    <p class="main-text" style="font-size: 52px; margin-top: 40px; margin-bottom: 40px;">
+      Para receber o vídeo no seu celular, escaneie o QR Code abaixo.
+    </p>
+
+    <div class="qrcode-wrapper">
+      <qrcode
+        [qrdata]="videoUrl"
+        [errorCorrectionLevel]="'M'"
+        [width]="600">
+      </qrcode>
+    </div>
+
+    <button class="btn-secondary" (click)="proceed()">Seguir</button>
+  </div>
+  <img src="assets/images/logo.png" alt="Logo Cliente" class="logo-footer">
+</div>

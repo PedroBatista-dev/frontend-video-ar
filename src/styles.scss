@@ -1,1 +1,114 @@
-/* You can add global styles to this file, and also import other style files */
+/* src/styles.scss */
+
+/* CORREÇÃO: Removida a sintaxe de link do Markdown da URL da fonte */
+@import url('[https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap)');
+
+
+// 2. Definir variáveis de cor globais para fácil manutenção
+:root {
+  --primary-bg-color: #0d2a4a;
+  --text-primary-color: #f0f0f0;
+  --text-secondary-color: #1a1a1a;
+  --control-bg-color: #f0ead6;
+  --accent-bg-color: #f9c943;
+}
+
+// 3. Resetar estilos e configurar o corpo da página
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1a1a1a;
+  font-family: 'Montserrat', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+// 4. Container principal que simula a tela do totem
+.screen-container {
+  width: 1080px;
+  height: 1920px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 150px 80px;
+  box-sizing: border-box;
+
+  // Aplica a imagem de fundo padrão
+  background-color: var(--primary-bg-color);
+  background-image: url('assets/images/background.png');
+  background-size: cover;
+  background-position: center;
+
+  // Lógica para redimensionar o container para caber na tela do navegador, mantendo a proporção
+  transform: scale(calc(100vh / 1920));
+  transform-origin: center;
+}
+
+// 5. Estrutura interna comum a todas as telas
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  z-index: 2;
+}
+
+.logo-footer {
+  width: 350px;
+  height: auto;
+  z-index: 2;
+}
+
+// 6. Estilos de texto padrão
+.main-text {
+  color: var(--text-primary-color);
+  font-size: 84px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 60px 0;
+}
+
+.secondary-text {
+  color: var(--text-primary-color);
+  font-size: 48px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+// 7. Estilos de botões reutilizáveis
+.btn {
+  border: none;
+  border-radius: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  }
+}
+
+.btn-primary {
+  @extend .btn;
+  background-color: var(--control-bg-color);
+  color: var(--text-secondary-color);
+  font-size: 100px;
+  padding: 40px 120px;
+}
+
+.btn-secondary {
+  @extend .btn;
+  background-color: var(--accent-bg-color);
+  color: var(--text-secondary-color);
+  font-size: 42px;
+  padding: 30px 60px;
+}

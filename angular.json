@@ -34,7 +34,10 @@
             "styles": [
               "src/styles.scss"
             ],
-            "scripts": [],
+            "scripts": [
+              "node_modules/aframe/dist/aframe-master.min.js",
+              "node_modules/mind-ar/dist/mindar-image-aframe.prod.js"
+            ],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "ssr": {
@@ -103,5 +106,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "98ea4f50-19db-49b1-84f8-834965d7c19b"
   }
 }

@@ -1,0 +1,17 @@
+.highlight-box {
+  background-color: var(--accent-bg-color);
+  color: var(--text-secondary-color);
+  border-radius: 20px;
+  padding: 30px 60px;
+  font-size: 54px;
+  font-weight: 700;
+}
+
+.qrcode-wrapper {
+  background-color: white;
+  padding: 40px;
+  border-radius: 30px;
+  margin-top: 50px;
+  margin-bottom: 70px;
+  line-height: 0; // Remove espaço extra abaixo do canvas
+}

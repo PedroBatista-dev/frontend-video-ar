@@ -1,0 +1,15 @@
+<div class="screen-container">
+  <div class="content-wrapper">
+    <h1 class="main-text" style="font-size: 72px; margin-bottom: 40px;">Primeiro, preencha seus dados.</h1>
+    <form (ngSubmit)="onSubmit()" #dataForm="ngForm" class="data-form">
+      <label for="name">Nome e sobrenome</label>
+      <input id="name" type="text" [(ngModel)]="user.name" name="name" required>
+      <label for="email">E-mail</label>
+      <input id="email" type="email" [(ngModel)]="user.email" name="email" required>
+      <label for="phone">Telefone</label>
+      <input id="phone" type="tel" [(ngModel)]="user.phone" name="phone" required>
+      <button type="submit" class="btn-secondary" [disabled]="dataForm.invalid">Confirmar e participar</button>
+    </form>
+  </div>
+  <img src="assets/images/logo.png" alt="Logo Cliente" class="logo-footer">
+</div>
