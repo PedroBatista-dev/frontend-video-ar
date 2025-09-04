@@ -1,35 +1,13 @@
-<div class="recording-container">
-  <a-scene #scene
-    mindar-image="imageTargetSrc: assets/ar/target.mind; autoStart: true; uiLoading: no; uiScanning: no;"
-    color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights"
-    vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-video src="assets/videos/ar_video.mp4" loop="true" rotation="0 0 0" position="0 0 0" height="1" width="1.77"></a-video>
-    </a-entity>
-  </a-scene>
+<div class="screen">
+  <div #container class="canvas-host"></div>
 
-  <div class="ui-overlay">
-    <div *ngIf="state === 'idle'" class="overlay-content">
-      <button class="btn-primary" (click)="startRecording()">Iniciar Gravação</button>
-    </div>
-    <div *ngIf="state === 'recording'" class="overlay-content">
-      <div class="recording-indicator"></div>
-      <p class="status-text">Gravando...</p>
-    </div>
-    <div *ngIf="state === 'preview'" class="overlay-content preview-mode">
-      <video [src]="videoPreviewUrl" autoplay loop muted class="video-preview"></video>
-      <div class="button-group">
-        <button class="btn-secondary" (click)="proceed()">Seguir</button>
-        <button class="btn-secondary" (click)="recordAgain()">Gravar Novamente</button>
-      </div>
-    </div>
-    <div *ngIf="state === 'uploading'" class="overlay-content">
-      <p class="status-text">Enviando seu vídeo, aguarde...</p>
-    </div>
-    <div *ngIf="state === 'error'" class="overlay-content">
-      <p class="status-text error-text">Ocorreu um erro. Por favor, tente novamente.</p>
-      <button class="btn-secondary" (click)="recordAgain()">Tentar Novamente</button>
-    </div>
+  <div class="choice" *ngIf="!recording && !showChoice">
+    <button class="btn" (click)="startRecording()">Iniciar gravação (10s)</button>
   </div>
+
+  <div class="choice" *ngIf="showChoice">
+    <button class="btn" (click)="send()">Seguir</button>
+    <button class="btn secondary" (click)="retry()">Gravar novamente</button>
+  </div>
+
 </div>

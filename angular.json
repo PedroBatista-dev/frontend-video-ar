@@ -27,7 +27,12 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/@mediapipe/selfie_segmentation",
+                "output": "assets/mediapipe/selfie_segmentation"
+              }
             ],
             "styles": [
               "src/styles.scss"

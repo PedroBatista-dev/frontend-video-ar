@@ -1,42 +1,64 @@
-:host, .recording-container {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* tela 1080x1920 com escala autom. para caber na janela */
+.screen {
+  position: relative;
   width: 1080px;
   height: 1920px;
+  background: #000;
   overflow: hidden;
-  background-color: #000;
+
+  transform: scale(calc(100vh / 1920));
+  transform-origin: center top;
+  margin: 0 auto;
 }
-.ui-overlay {
+
+/* host do video e canvas */
+.canvas-host {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
+  z-index: 1; /* base */
+}
+
+/* Preview cru da webcam: fica por baixo do canvas (posicionamento final é feito no TS) */
+.preview-video {
+  position: absolute;
+  z-index: 0;
+  background: transparent;
+  object-fit: cover;
+}
+
+/* Canvas final exibido + gravado (por cima do video, mesma área 1080×1920) */
+.composite-canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding-bottom: 100px;
-  box-sizing: border-box;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 40%);
+  z-index: 1;
+  background: transparent; /* deixa o preview aparecer por baixo enquanto o efeito não está pronto */
 }
-.overlay-content { display: flex; flex-direction: column; align-items: center; }
-.status-text { color: white; font-size: 48px; text-shadow: 2px 2px 4px #000; }
-.error-text { color: #ff4d4d; margin-bottom: 20px; }
-.recording-indicator {
-  width: 50px;
-  height: 50px;
-  background-color: red;
-  border-radius: 50%;
-  margin-bottom: 20px;
-  animation: pulse 1.5s infinite;
+
+/* UI */
+.choice {
+  position: absolute;
+  left: 0; right: 0; bottom: 140px;
+  display: flex; gap: 24px; justify-content: center;
+  z-index: 3;
 }
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 82, 82, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+.logo {
+  position: absolute; bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  width: 320px; max-width: 60%;
+  z-index: 3;
 }
-.preview-mode { width: 100%; height: 100%; justify-content: flex-end; }
-.video-preview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
-.button-group { display: flex; gap: 40px; .btn-secondary { font-size: 48px; } }
+.btn {
+  background: #f0ead6;
+  color: #1a1a1a;
+  border: 0;
+  border-radius: 20px;
+  padding: 24px 48px;
+  font-size: 48px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  &:hover { transform: translateY(-2px); }
+}
+.btn.secondary { background: #f9c943; }

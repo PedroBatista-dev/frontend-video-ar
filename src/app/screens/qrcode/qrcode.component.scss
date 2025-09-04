@@ -1,25 +1,18 @@
-.highlight-box {
-  background-color: var(--accent-bg-color);
-  color: var(--text-secondary-color);
-  border-radius: 20px;
-  padding: 30px 60px;
-  font-size: 54px;
-  font-weight: 700;
-}
-
 .qrcode-wrapper {
-  background-color: white;
-  padding: 40px;
-  border-radius: 30px;
-  margin-top: 50px;
-  margin-bottom: 70px;
+  margin-top: 15px;
+  margin-bottom: 15px;
   line-height: 0; // Remove espaço extra abaixo do canvas
 }
 
 .frase {
-    margin-top: 400px;
+    margin-top: 350px;
 }
 
 .frase-2 {
-    margin-top: 50px;
+    margin-top: 15px;
+}
+
+.btn-seguir {
+  font-size: 33px;
+  padding: 20px 40px;
 }
