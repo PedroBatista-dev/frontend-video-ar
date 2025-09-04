@@ -1,33 +1,63 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DataService, UserData } from '../../services/data.service';
 import { ParticipantService } from '../../services/participant.service';
+import { NgxMaskDirective } from 'ngx-mask';
 
 @Component({
   selector: 'app-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, NgxMaskDirective],
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss']
 })
-export class FormComponent {
-  user: UserData = { name: '', email: '', phone: '' };
+export class FormComponent implements OnInit {
+  dataForm!: FormGroup;
 
   constructor(
     private router: Router,
     private dataService: DataService,
-    private participantService: ParticipantService
+    private participantService: ParticipantService,
+    private fb: FormBuilder
   ) {}
 
+  ngOnInit(): void {
+    this.dataForm = this.fb.group({
+      // Valida nome e pelo menos um sobrenome
+      name: ['', [Validators.required, Validators.pattern(/^[a-zA-Z]+\s[a-zA-Z]+.*$/)]],
+      // Valida o formato do e-mail
+      email: ['', [Validators.required, Validators.email]],
+      // Valida o formato do telefone (com máscara)
+      phone: ['', [Validators.required, Validators.minLength(10)]]
+    });
+  }
+
   onSubmit(): void {
-    if (this.user.name && this.user.email && this.user.phone) {
-      this.dataService.setUserData(this.user);
-      this.participantService.saveParticipant(this.user).subscribe({
+    if (this.dataForm.valid) {
+      const userData: UserData = this.dataForm.value;
+      this.dataService.setUserData(userData);
+      this.participantService.saveParticipant(userData).subscribe({
           next: () => this.router.navigate(['/aguarde']),
           error: (err) => console.error('Falha ao salvar participante', err)
       });
+    } else {
+      // Marca todos os campos como "tocados" para exibir as mensagens de erro
+      this.dataForm.markAllAsTouched();
     }
+  }
+
+  // Métodos de atalho para acessar os controles do formulário no template
+  get name() {
+    return this.dataForm.get('name');
+  }
+
+  get email() {
+    return this.dataForm.get('email');
+  }
+
+  get phone() {
+    return this.dataForm.get('phone');
   }
 }

@@ -1,13 +1,29 @@
 <div class="screen-container">
   <div class="content-wrapper">
-    <h1 class="main-text" style="font-size: 72px; margin-bottom: 40px;">Primeiro, preencha seus dados.</h1>
-    <form (ngSubmit)="onSubmit()" #dataForm="ngForm" class="data-form">
+    <img src="assets/images/tela2/frase.png" alt="Frase" class="frase">
+    <form [formGroup]="dataForm" (ngSubmit)="onSubmit()" class="data-form">
+
       <label for="name">Nome e sobrenome</label>
-      <input id="name" type="text" [(ngModel)]="user.name" name="name" required>
+      <input id="name" type="text" formControlName="name">
+      <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
+        <div *ngIf="name?.errors?.['required']">Nome é obrigatório.</div>
+        <div *ngIf="name?.errors?.['pattern']">Digite o nome e sobrenome.</div>
+      </div>
+
       <label for="email">E-mail</label>
-      <input id="email" type="email" [(ngModel)]="user.email" name="email" required>
+      <input id="email" type="email" formControlName="email">
+      <div *ngIf="email?.invalid && (email?.dirty || email?.touched)" class="error-message">
+        <div *ngIf="email?.errors?.['required']">E-mail é obrigatório.</div>
+        <div *ngIf="email?.errors?.['email']">Formato de e-mail inválido.</div>
+      </div>
+
       <label for="phone">Telefone</label>
-      <input id="phone" type="tel" [(ngModel)]="user.phone" name="phone" required>
+      <input id="phone" type="tel" formControlName="phone" mask="(00) 00000-0000||(00) 0000-0000">
+      <div *ngIf="phone?.invalid && (phone?.dirty || phone?.touched)" class="error-message">
+        <div *ngIf="phone?.errors?.['required']">Telefone é obrigatório.</div>
+        <div *ngIf="phone?.errors?.['minlength']">Telefone incompleto.</div>
+      </div>
+
       <button type="submit" class="btn-secondary" [disabled]="dataForm.invalid">Confirmar e participar</button>
     </form>
   </div>

@@ -30,6 +30,9 @@
 
   .btn-secondary {
     margin-top: 60px;
+    color: #0d2a4a;
+    font-family: 'Montserrat';
+    font-size: 60px;
     &:disabled {
       background-color: #a0a0a0;
       cursor: not-allowed;
@@ -37,4 +40,19 @@
       box-shadow: none;
     }
   }
+}
+
+.frase {
+    margin-top: 400px;
+}
+
+.error-message {
+  color: #ff5757;
+  font-size: 1.8rem;
+  margin-top: 4px;
+  height: 1.2rem;
+}
+
+input.ng-invalid.ng-touched {
+  border-color: #ff5757;
 }

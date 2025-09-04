@@ -1,9 +1,5 @@
 /* src/styles.scss */
 
-/* CORREÇÃO: Removida a sintaxe de link do Markdown da URL da fonte */
-@import url('[https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap)');
-
-
 // 2. Definir variáveis de cor globais para fácil manutenção
 :root {
   --primary-bg-color: #0d2a4a;
@@ -62,7 +58,7 @@ body, html {
 }
 
 .logo-footer {
-  width: 350px;
+  width: 500px;
   height: auto;
   z-index: 2;
 }
@@ -111,4 +107,6 @@ body, html {
   color: var(--text-secondary-color);
   font-size: 42px;
   padding: 30px 60px;
+  font-size: 50px;
+  font-family: 'Montserrat';
 }

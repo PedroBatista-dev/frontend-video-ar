@@ -31,7 +31,9 @@ export class RecordingComponent implements OnInit, OnDestroy {
   ngOnInit(): void {}
 
   startRecording(): void {
-    const canvas = this.sceneEl.nativeElement.renderer?.domElement as HTMLCanvasElement;
+    const sceneElement = this.sceneEl.nativeElement as any;
+    const canvas: HTMLCanvasElement | null =
+      sceneElement.renderer?.domElement || sceneElement.sceneEl?.canvas || null;
     if (!canvas) {
       this.state = 'error';
       return;
