@@ -6,15 +6,21 @@ import { DataService, UserData } from '../../services/data.service';
 import { ParticipantService } from '../../services/participant.service';
 import { NgxMaskDirective } from 'ngx-mask';
 
+// ⬇️ importe o componente do teclado (use o caminho onde você salvou)
+import { VirtualKeyboardComponent } from '../../shared/virtual-keyboard/virtual-keyboard.component';
+
 @Component({
   selector: 'app-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgxMaskDirective],
+  imports: [CommonModule, ReactiveFormsModule, NgxMaskDirective, VirtualKeyboardComponent],
   templateUrl: './form.component.html',
   styleUrls: ['./form.component.scss']
 })
 export class FormComponent implements OnInit {
   dataForm!: FormGroup;
+
+  // controla qual campo está com o teclado aberto
+  showKeyboardFor: 'name' | 'email' | 'phone' | null = null;
 
   constructor(
     private router: Router,
@@ -26,13 +32,13 @@ export class FormComponent implements OnInit {
   ngOnInit(): void {
     this.dataForm = this.fb.group({
       // Valida nome e pelo menos um sobrenome
-      name: ['', [Validators.required, Validators.pattern(/^[a-zA-Z]+\s[a-zA-Z]+.*$/)]],
+      name: ['', [Validators.required, Validators.pattern(/^[a-zA-ZÀ-ÿ]+\s+[a-zA-ZÀ-ÿ].*$/)]],
       // Valida o formato do e-mail
       email: ['', [Validators.required, Validators.email]],
       // Valida o formato do telefone (com máscara)
       phone: ['', [Validators.required, Validators.minLength(10)]],
-      // Novo campo checkbox
-      shareInfo: ['Não']  // valor inicial "Não"
+      // Checkbox
+      shareInfo: ['Não']
     });
   }
 
@@ -46,29 +52,25 @@ export class FormComponent implements OnInit {
       const userData: UserData = this.dataForm.value;
       this.dataService.setUserData(userData);
       this.participantService.saveParticipant(userData).subscribe({
-          next: () => this.router.navigate(['/aguarde']),
-          error: (err) => console.error('Falha ao salvar participante', err)
+        next: () => this.router.navigate(['/aguarde']),
+        error: (err) => console.error('Falha ao salvar participante', err)
       });
     } else {
-      // Marca todos os campos como "tocados" para exibir as mensagens de erro
       this.dataForm.markAllAsTouched();
     }
   }
 
-  // Métodos de atalho para acessar os controles do formulário no template
-  get name() {
-    return this.dataForm.get('name');
-  }
+  // Helpers
+  get name()  { return this.dataForm.get('name'); }
+  get email() { return this.dataForm.get('email'); }
+  get phone() { return this.dataForm.get('phone'); }
+  get shareInfo() { return this.dataForm.get('shareInfo'); }
 
-  get email() {
-    return this.dataForm.get('email');
+  // Abrir/fechar teclado
+  openKeyboard(field: 'name' | 'email' | 'phone') {
+    this.showKeyboardFor = field;
   }
-
-  get phone() {
-    return this.dataForm.get('phone');
-  }
-
-  get shareInfo() {
-    return this.dataForm.get('shareInfo');
+  closeKeyboard() {
+    this.showKeyboardFor = null;
   }
 }

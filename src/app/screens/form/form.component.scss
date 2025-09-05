@@ -12,6 +12,13 @@
     margin-bottom: 15px;
   }
 
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
   input {
     background-color: var(--control-bg-color);
     border: 4px solid transparent;
@@ -26,6 +33,16 @@
       outline: none;
       border-color: var(--accent-bg-color);
     }
+  }
+
+  .kb-toggle {
+    padding: 16px 22px;
+    border-radius: 16px;
+    border: 0;
+    font-size: 22px;
+    background: #1f2937;
+    color: #fff;
+    cursor: pointer;
   }
 
   .btn-secondary {
@@ -43,7 +60,7 @@
 }
 
 .frase {
-    margin-top: 400px;
+  margin-top: 400px;
 }
 
 .error-message {
@@ -72,4 +89,28 @@ label {
 .check-aceita {
   font-size: 26px !important;
   margin-top: 10px !important;
+}
+
+/* ---- Área fixa pro teclado no rodapé ---- */
+.vk-fixed {
+  position: fixed;
+  bottom: 0px;
+  left: 195px;
+  z-index: 9999;
+  width: 100%;
+}
+
+/* Evita que o conteúdo fique escondido pelo teclado fixo */
+.screen-container {
+  padding-bottom: 360px; /* ajuste se o teclado crescer */
+}
+
+/* aumenta as teclas */
+:host ::ng-deep .simple-keyboard.hg-theme-default {
+  font-size: 3rem;         /* aumenta a fonte */
+}
+
+:host ::ng-deep .hg-button {
+  height: 75px !important; /* altura das teclas */
+  flex: 1 1 auto;
 }

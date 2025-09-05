@@ -1,5 +1,8 @@
 /* src/styles.scss */
 
+@import "simple-keyboard/build/css/index.css";
+
+
 // 2. Definir variáveis de cor globais para fácil manutenção
 :root {
   --primary-bg-color: #0d2a4a;

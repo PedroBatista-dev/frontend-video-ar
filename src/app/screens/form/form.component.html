@@ -1,24 +1,56 @@
 <div class="screen-container">
   <div class="content-wrapper">
     <img src="assets/images/tela2/frase.png" alt="Frase" class="frase">
+
     <form [formGroup]="dataForm" (ngSubmit)="onSubmit()" class="data-form">
 
       <label for="name">Nome e sobrenome</label>
-      <input id="name" type="text" formControlName="name">
+      <div class="input-row">
+        <input
+          id="name"
+          type="text"
+          formControlName="name"
+          readonly
+          (focus)="openKeyboard('name')"
+          (click)="openKeyboard('name')"
+          placeholder="Digite seu nome e sobrenome"
+        />
+      </div>
       <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="error-message">
         <div *ngIf="name?.errors?.['required']">Nome é obrigatório.</div>
         <div *ngIf="name?.errors?.['pattern']">Digite o nome e sobrenome.</div>
       </div>
 
       <label for="email">E-mail</label>
-      <input id="email" type="email" formControlName="email">
+      <div class="input-row">
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          readonly
+          (focus)="openKeyboard('email')"
+          (click)="openKeyboard('email')"
+          placeholder="email@dominio.com"
+        />
+      </div>
       <div *ngIf="email?.invalid && (email?.dirty || email?.touched)" class="error-message">
         <div *ngIf="email?.errors?.['required']">E-mail é obrigatório.</div>
         <div *ngIf="email?.errors?.['email']">Formato de e-mail inválido.</div>
       </div>
 
       <label for="phone">Telefone</label>
-      <input id="phone" type="tel" formControlName="phone" mask="(00) 00000-0000||(00) 0000-0000">
+      <div class="input-row">
+        <input
+          id="phone"
+          type="tel"
+          formControlName="phone"
+          mask="(00) 00000-0000||(00) 0000-0000"
+          readonly
+          (focus)="openKeyboard('phone')"
+          (click)="openKeyboard('phone')"
+          placeholder="(00) 00000-0000"
+        />
+      </div>
       <div *ngIf="phone?.invalid && (phone?.dirty || phone?.touched)" class="error-message">
         <div *ngIf="phone?.errors?.['required']">Telefone é obrigatório.</div>
         <div *ngIf="phone?.errors?.['minlength']">Telefone incompleto.</div>
@@ -32,8 +64,42 @@
         Aceita compartilhar suas informações pessoais com o Senac?
       </label>
 
-      <button type="submit" class="btn-secondary" [disabled]="dataForm.invalid || dataForm.get('shareInfo')!.value == 'Não'">Confirmar e participar</button>
+      <button
+        type="submit"
+        class="btn-secondary"
+        [disabled]="dataForm.invalid || dataForm.get('shareInfo')!.value == 'Não'">
+        Confirmar e participar
+      </button>
     </form>
   </div>
+
+  <!-- TECLADOS (aparecem fixos no rodapé quando um campo está ativo) -->
+  <div class="vk-fixed" *ngIf="showKeyboardFor === 'name'">
+    <app-virtual-keyboard
+      [control]="name!"
+      [autoCloseOnEnter]="true"
+      (close)="closeKeyboard()">
+    </app-virtual-keyboard>
+  </div>
+
+  <div class="vk-fixed" *ngIf="showKeyboardFor === 'email'">
+    <app-virtual-keyboard
+      [control]="email!"
+      [autoCloseOnEnter]="true"
+      (close)="closeKeyboard()">
+    </app-virtual-keyboard>
+  </div>
+
+  <div class="vk-fixed" *ngIf="showKeyboardFor === 'phone'">
+    <app-virtual-keyboard
+      [control]="phone!"
+      [compact]="true"
+      [autoCloseOnEnter]="true"
+      [initialLayout]="'numeric'"
+      (close)="closeKeyboard()">
+    </app-virtual-keyboard>
+    <!-- Dica: toque no botão "123" do teclado para layout numérico -->
+  </div>
+
   <img src="assets/images/logo.png" alt="Logo Cliente" class="logo-footer">
 </div>
