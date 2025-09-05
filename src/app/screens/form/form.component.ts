@@ -30,12 +30,19 @@ export class FormComponent implements OnInit {
       // Valida o formato do e-mail
       email: ['', [Validators.required, Validators.email]],
       // Valida o formato do telefone (com máscara)
-      phone: ['', [Validators.required, Validators.minLength(10)]]
+      phone: ['', [Validators.required, Validators.minLength(10)]],
+      // Novo campo checkbox
+      shareInfo: ['Não']  // valor inicial "Não"
     });
   }
 
+  onShareInfoChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.dataForm.patchValue({ shareInfo: checked ? 'Sim' : 'Não' });
+  }
+
   onSubmit(): void {
-    if (this.dataForm.valid) {
+    if (this.dataForm.valid && this.dataForm.get('shareInfo')!.value == 'Sim') {
       const userData: UserData = this.dataForm.value;
       this.dataService.setUserData(userData);
       this.participantService.saveParticipant(userData).subscribe({
@@ -59,5 +66,9 @@ export class FormComponent implements OnInit {
 
   get phone() {
     return this.dataForm.get('phone');
+  }
+
+  get shareInfo() {
+    return this.dataForm.get('shareInfo');
   }
 }

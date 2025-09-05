@@ -24,7 +24,15 @@
         <div *ngIf="phone?.errors?.['minlength']">Telefone incompleto.</div>
       </div>
 
-      <button type="submit" class="btn-secondary" [disabled]="dataForm.invalid">Confirmar e participar</button>
+      <label class="check-aceita">
+        <input 
+          type="checkbox" 
+          [checked]="shareInfo?.value === 'Sim'"
+          (change)="onShareInfoChange($event)">
+        Aceita compartilhar suas informações pessoais com o Senac?
+      </label>
+
+      <button type="submit" class="btn-secondary" [disabled]="dataForm.invalid || dataForm.get('shareInfo')!.value == 'Não'">Confirmar e participar</button>
     </form>
   </div>
   <img src="assets/images/logo.png" alt="Logo Cliente" class="logo-footer">
