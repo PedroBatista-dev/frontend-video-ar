@@ -42,7 +42,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private matteCanvas?: HTMLCanvasElement;       // máscara suavizada (feather)
   private matteCtx?: CanvasRenderingContext2D | null;
 
-  private personCanvas?: HTMLCanvasElement;      // conteúdo recortado (neste modo: webcam na janela fixa)
+  private personCanvas?: HTMLCanvasElement;      // conteúdo recortado (webcam dentro da janela)
   private personCtx?: CanvasRenderingContext2D | null;
 
   private outlineCanvas?: HTMLCanvasElement;     // traço/contorno ao redor da janela
@@ -52,7 +52,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private mediaRecorder?: MediaRecorder;
   private chunks: Blob[] = [];
 
-  // Segmentation
+  // Segmentation (usado apenas se USE_FIXED_WINDOW=false)
   private selfieSeg?: any;
   private processing = false;
   private lastMask?: HTMLCanvasElement;
@@ -60,7 +60,6 @@ export class RecordingComponent implements OnInit, OnDestroy {
 
   // --------------------------------------------------------------------------
   // Config (ajuste estes se precisar)
-  // Resolução 3:4 (mural 3m x 4m)
   private readonly W = 1440;
   private readonly H = 1920;
   private readonly ROTATE_CLOCKWISE = true; // câmera em paisagem → girar 90°
@@ -76,11 +75,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private readonly USE_FIXED_WINDOW = true;
 
   // Geometria da janela em arco (em px, no canvas 1440×1920)
-  // A janela terá topo em ARCO (meia-lua) e base reta.
-  private readonly WINDOW_X = 430;
-  private readonly WINDOW_Y = 580;
-  private readonly WINDOW_W = 580;
-  private readonly WINDOW_H = 1340;
+  private readonly WINDOW_X = 555;
+  private readonly WINDOW_Y = 750;
+  private readonly WINDOW_W = 330;
+  private readonly WINDOW_H = 750;
   // Raio do arco no topo. Para um arco perfeito (semicírculo), use W/2 (=540 com W=1080).
   private readonly WINDOW_ARCH_RADIUS = 540;
 
@@ -320,8 +318,38 @@ export class RecordingComponent implements OnInit, OnDestroy {
     ctx.drawImage(media, sx, sy, sw, sh, 0, 0, W, H);
   }
 
+  // NOVO: Encaixa o vídeo COMPLETO no canvas (sem cortes), centralizado, com barras
+  private drawMediaContain(
+    ctx: CanvasRenderingContext2D,
+    media: HTMLVideoElement | HTMLImageElement,
+    W: number,
+    H: number,
+    fill: string = '#000'
+  ) {
+    const mw =
+      (media as HTMLVideoElement).videoWidth ||
+      (media as HTMLImageElement).naturalWidth;
+    const mh =
+      (media as HTMLVideoElement).videoHeight ||
+      (media as HTMLImageElement).naturalHeight;
+    if (!mw || !mh) return;
+
+    // limpa e pinta o fundo (barras)
+    ctx.fillStyle = fill;
+    ctx.fillRect(0, 0, W, H);
+
+    // escala para CABER por completo (contain)
+    const scale = Math.min(W / mw, H / mh);
+    const dw = mw * scale;
+    const dh = mh * scale;
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
+
+    ctx.drawImage(media, 0, 0, mw, mh, dx, dy, dw, dh);
+  }
+
   // --------------------------------------------------------------------------
-  // Composição com máscara de pessoa (modo antigo – mantido para alternar se quiser)
+  // Composição com máscara de pessoa (modo alternativo)
   private renderCompositeWithMask(maskCanvas: HTMLCanvasElement) {
     const W = this.W, H = this.H;
 
@@ -385,8 +413,9 @@ export class RecordingComponent implements OnInit, OnDestroy {
     outCtx.save();
     outCtx.clearRect(0, 0, W, H);
 
+    // ⬇️ Aqui usamos CONTAIN pro vídeo de fundo (entra inteiro)
     if (this.bgVideo && this.bgVideo.readyState >= 2) {
-      this.drawMediaCover(outCtx, this.bgVideo, W, H);
+      this.drawMediaContain(outCtx, this.bgVideo, W, H);
     } else {
       outCtx.fillStyle = '#000';
       outCtx.fillRect(0, 0, W, H);
@@ -399,7 +428,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------------------------------
-  // 🔹 NOVO: Composição com "janela fixa" em ARCO (fundo + contorno + webcam recortada)
+  // 🔹 Composição com "janela fixa" em ARCO (fundo + contorno + webcam recortada)
   private renderCompositeWithFixedWindow() {
     const W = this.W, H = this.H;
 
@@ -486,9 +515,9 @@ export class RecordingComponent implements OnInit, OnDestroy {
     outCtx.save();
     outCtx.clearRect(0, 0, W, H);
 
-    // Fundo
+    // ⬇️ Aqui usamos CONTAIN pro vídeo de fundo (entra inteiro)
     if (this.bgVideo && this.bgVideo.readyState >= 2) {
-      this.drawMediaCover(outCtx, this.bgVideo, W, H);
+      this.drawMediaContain(outCtx, this.bgVideo, W, H);
     } else {
       outCtx.fillStyle = '#000';
       outCtx.fillRect(0, 0, W, H);
@@ -537,14 +566,14 @@ export class RecordingComponent implements OnInit, OnDestroy {
 
     this.chunks = [];
     const mime =
-      MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' :
-      MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' :
-      'video/webm';
+      MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.64003E,mp4a.40.2') ? 'video/mp4;codecs=avc1.64003E,mp4a.40.2' :
+      MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.64003E,opus') ? 'video/mp4;codecs=avc1.64003E,opus' :
+      'video/mp4';
 
     this.mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
     this.mediaRecorder.ondataavailable = (e) => { if (e.data?.size) this.chunks.push(e.data); };
     const done = new Promise<Blob>((resolve) => {
-      this.mediaRecorder!.onstop = () => resolve(new Blob(this.chunks, { type: 'video/webm' }));
+      this.mediaRecorder!.onstop = () => resolve(new Blob(this.chunks, { type: 'video/mp4' }));
     });
 
     this.recording = true;
