@@ -42,10 +42,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private matteCanvas?: HTMLCanvasElement;       // máscara suavizada (feather)
   private matteCtx?: CanvasRenderingContext2D | null;
 
-  private personCanvas?: HTMLCanvasElement;      // pessoa recortada com feather
+  private personCanvas?: HTMLCanvasElement;      // conteúdo recortado (neste modo: webcam na janela fixa)
   private personCtx?: CanvasRenderingContext2D | null;
 
-  private outlineCanvas?: HTMLCanvasElement;     // traço/contorno ao redor da pessoa
+  private outlineCanvas?: HTMLCanvasElement;     // traço/contorno ao redor da janela
   private outlineCtx?: CanvasRenderingContext2D | null;
 
   // Recorder
@@ -67,10 +67,22 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private readonly MIRROR = false;          // efeito “espelho”
 
   // 🔧 Qualidade do recorte e contorno
-  private readonly FEATHER_PX = 2;                        // suaviza a borda do recorte (1–4)
+  private readonly FEATHER_PX = 2;                        // suaviza a borda (1–4)
   private readonly OUTLINE_WIDTH = 8;                     // espessura do traço (px)
   private readonly OUTLINE_COLOR = 'rgba(255,255,255,0.95)'; // cor do traço
   private readonly OUTLINE_SOFTNESS = 1;                  // leve suavização do traço
+
+  // 🔁 Modo janela fixa para webcam (substitui a pessoa segmentada)
+  private readonly USE_FIXED_WINDOW = true;
+
+  // Geometria da janela em arco (em px, no canvas 1440×1920)
+  // A janela terá topo em ARCO (meia-lua) e base reta.
+  private readonly WINDOW_X = 430;
+  private readonly WINDOW_Y = 580;
+  private readonly WINDOW_W = 580;
+  private readonly WINDOW_H = 1340;
+  // Raio do arco no topo. Para um arco perfeito (semicírculo), use W/2 (=540 com W=1080).
+  private readonly WINDOW_ARCH_RADIUS = 540;
 
   constructor(
     private router: Router,
@@ -84,8 +96,13 @@ export class RecordingComponent implements OnInit, OnDestroy {
     this.createElements();
     await this.startCamera();           // liga webcam e mostra preview
     await this.startBackgroundVideo();  // tenta tocar bg
-    await this.initSegmentation();      // carrega MediaPipe
-    this.loop();                        // inicia render/seg
+
+    // Carrega a segmentação apenas se for usar o modo "Pessoa"
+    if (!this.USE_FIXED_WINDOW) {
+      await this.initSegmentation();
+    }
+
+    this.loop();                        // inicia render
   }
 
   ngOnDestroy() { this.stopAll(); }
@@ -117,7 +134,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     this.inputCanvas.height = this.H;
     this.inputCtx = this.inputCanvas.getContext('2d');
 
-    // Offscreens para matte, pessoa e contorno
+    // Offscreens para matte, conteúdo e contorno
     this.matteCanvas = document.createElement('canvas');
     this.matteCanvas.width = this.W;
     this.matteCanvas.height = this.H;
@@ -145,8 +162,8 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private async startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+        width: { ideal: 3840 },  // 👈 pode pedir 4K; a câmera usará o máximo suportado
+        height: { ideal: 2160 },
         frameRate: { ideal: 30 }
       },
       audio: false
@@ -167,9 +184,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     v.style.left = '50%';
     v.style.top = '50%';
 
-    // Base: a câmera entrega 1920×1080 (paisagem). Vamos girar para retrato:
     const rotateDeg = this.ROTATE_CLOCKWISE ? 90 : 0;
-
     const mirrorScale = this.MIRROR ? ' scaleX(-1)' : '';
 
     if (this.ROTATE_CLOCKWISE) {
@@ -218,20 +233,29 @@ export class RecordingComponent implements OnInit, OnDestroy {
     this.drawRotatedWebcamIntoInput();
 
     // 2) compõe
-    if (this.lastMask) {
-      this.renderCompositeWithMask(this.lastMask);
+    if (this.USE_FIXED_WINDOW) {
+      // 🚪 Janela fixa: não depende da segmentação
+      this.renderCompositeWithFixedWindow();
       if (!this.haveEffect) {
         this.haveEffect = true;
         if (this.previewVideo) this.previewVideo.style.visibility = 'hidden'; // esconde preview cru
       }
     } else {
-      // sem máscara ainda: mantém o canvas transparente para ver o preview por baixo
-      const ctx = this.compositeCtx!;
-      ctx.clearRect(0, 0, this.W, this.H);
+      // 👤 Modo segmentação (com pessoa)
+      if (this.lastMask) {
+        this.renderCompositeWithMask(this.lastMask);
+        if (!this.haveEffect) {
+          this.haveEffect = true;
+          if (this.previewVideo) this.previewVideo.style.visibility = 'hidden';
+        }
+      } else {
+        const ctx = this.compositeCtx!;
+        ctx.clearRect(0, 0, this.W, this.H);
+      }
     }
 
-    // 3) dispara segmentação se livre
-    if (!this.processing && this.selfieSeg) {
+    // 3) dispara segmentação somente se NÃO estiver no modo janela fixa
+    if (!this.USE_FIXED_WINDOW && !this.processing && this.selfieSeg) {
       this.processing = true;
       await this.selfieSeg.send({ image: this.inputCanvas! });
     }
@@ -297,7 +321,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------------------------------
-  // Composição com máscara com feather + contorno
+  // Composição com máscara de pessoa (modo antigo – mantido para alternar se quiser)
   private renderCompositeWithMask(maskCanvas: HTMLCanvasElement) {
     const W = this.W, H = this.H;
 
@@ -310,7 +334,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     matteCtx.save();
     matteCtx.clearRect(0, 0, W, H);
     if (this.FEATHER_PX > 0) {
-      (matteCtx as any).filter = `blur(${this.FEATHER_PX}px)`; // suaviza a borda
+      (matteCtx as any).filter = `blur(${this.FEATHER_PX}px)`;
       matteCtx.drawImage(maskCanvas, 0, 0, W, H);
       (matteCtx as any).filter = 'none';
     } else {
@@ -318,7 +342,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     }
     matteCtx.restore();
 
-    // --- 2) Recorta a pessoa usando o matte (borda suave) ---
+    // --- 2) Recorta a pessoa ---
     personCtx.save();
     personCtx.clearRect(0, 0, W, H);
     personCtx.drawImage(this.inputCanvas!, 0, 0, W, H);
@@ -327,27 +351,22 @@ export class RecordingComponent implements OnInit, OnDestroy {
     personCtx.globalCompositeOperation = 'source-over';
     personCtx.restore();
 
-    // --- 3) Gera o contorno (traço) ao redor da pessoa ---
+    // --- 3) Gera o contorno ---
     outlineCtx.save();
     outlineCtx.clearRect(0, 0, W, H);
 
-    // “Dilata” a máscara via blur para formar a área do traço
     const blurForOutline = Math.max(1, this.OUTLINE_WIDTH);
     (outlineCtx as any).filter = `blur(${blurForOutline}px)`;
     outlineCtx.drawImage(maskCanvas, 0, 0, W, H);
     (outlineCtx as any).filter = 'none';
 
-    // Colore a área dilatada
     outlineCtx.globalCompositeOperation = 'source-in';
     outlineCtx.fillStyle = this.OUTLINE_COLOR;
     outlineCtx.fillRect(0, 0, W, H);
 
-    // Remove o interior (mantém só o “anel”)
     outlineCtx.globalCompositeOperation = 'destination-out';
-    // usar o matte suavizado para um anel com transição suave
     outlineCtx.drawImage(this.matteCanvas!, 0, 0, W, H);
 
-    // toque final de suavização do contorno (opcional)
     if (this.OUTLINE_SOFTNESS > 0) {
       const tmp = document.createElement('canvas');
       tmp.width = W; tmp.height = H;
@@ -362,11 +381,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
 
     outlineCtx.restore();
 
-    // --- 4) Composição final: fundo → contorno → pessoa ---
+    // --- 4) Composição final ---
     outCtx.save();
     outCtx.clearRect(0, 0, W, H);
 
-    // Fundo (preenche as áreas de fundo)
     if (this.bgVideo && this.bgVideo.readyState >= 2) {
       this.drawMediaCover(outCtx, this.bgVideo, W, H);
     } else {
@@ -374,13 +392,138 @@ export class RecordingComponent implements OnInit, OnDestroy {
       outCtx.fillRect(0, 0, W, H);
     }
 
-    // Contorno
     outCtx.drawImage(this.outlineCanvas!, 0, 0, W, H);
-
-    // Pessoa
     outCtx.drawImage(this.personCanvas!, 0, 0, W, H);
 
     outCtx.restore();
+  }
+
+  // --------------------------------------------------------------------------
+  // 🔹 NOVO: Composição com "janela fixa" em ARCO (fundo + contorno + webcam recortada)
+  private renderCompositeWithFixedWindow() {
+    const W = this.W, H = this.H;
+
+    const matteCtx = this.matteCtx!;
+    const personCtx = this.personCtx!;
+    const outlineCtx = this.outlineCtx!;
+    const outCtx = this.compositeCtx!;
+
+    // --- 1) Matte (máscara suavizada da janela em ARCO) ---
+    matteCtx.save();
+    matteCtx.clearRect(0, 0, W, H);
+
+    // desenha a forma base (branca) da janela
+    matteCtx.fillStyle = '#fff';
+    this.archWindowPath(
+      matteCtx, this.WINDOW_X, this.WINDOW_Y, this.WINDOW_W, this.WINDOW_H, this.WINDOW_ARCH_RADIUS
+    );
+    matteCtx.fill();
+
+    // aplica feather (suaviza bordas)
+    if (this.FEATHER_PX > 0) {
+      const tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      const tctx = tmp.getContext('2d')!;
+      tctx.drawImage(this.matteCanvas!, 0, 0);
+      (matteCtx as any).filter = `blur(${this.FEATHER_PX}px)`;
+      matteCtx.clearRect(0, 0, W, H);
+      matteCtx.drawImage(tmp, 0, 0);
+      (matteCtx as any).filter = 'none';
+    }
+    matteCtx.restore();
+
+    // --- 2) Recorta a webcam pela janela ---
+    personCtx.save();
+    personCtx.clearRect(0, 0, W, H);
+    personCtx.drawImage(this.inputCanvas!, 0, 0, W, H);
+    personCtx.globalCompositeOperation = 'destination-in';
+    personCtx.drawImage(this.matteCanvas!, 0, 0, W, H);
+    personCtx.globalCompositeOperation = 'source-over';
+    personCtx.restore();
+
+    // --- 3) Gera o contorno da janela ---
+    outlineCtx.save();
+    outlineCtx.clearRect(0, 0, W, H);
+
+    // base da janela "sólida" (sem feather) para dilatar
+    const base = document.createElement('canvas');
+    base.width = W; base.height = H;
+    const bctx = base.getContext('2d')!;
+    bctx.fillStyle = '#fff';
+    this.archWindowPath(bctx, this.WINDOW_X, this.WINDOW_Y, this.WINDOW_W, this.WINDOW_H, this.WINDOW_ARCH_RADIUS);
+    bctx.fill();
+
+    // dilata via blur para criar área do traço
+    const blurForOutline = Math.max(1, this.OUTLINE_WIDTH);
+    (outlineCtx as any).filter = `blur(${blurForOutline}px)`;
+    outlineCtx.drawImage(base, 0, 0);
+    (outlineCtx as any).filter = 'none';
+
+    // colore área dilatada
+    outlineCtx.globalCompositeOperation = 'source-in';
+    outlineCtx.fillStyle = this.OUTLINE_COLOR;
+    outlineCtx.fillRect(0, 0, W, H);
+
+    // remove o interior usando o matte suavizado (fica só o anel)
+    outlineCtx.globalCompositeOperation = 'destination-out';
+    outlineCtx.drawImage(this.matteCanvas!, 0, 0, W, H);
+
+    // suavização final do contorno
+    if (this.OUTLINE_SOFTNESS > 0) {
+      const tmp2 = document.createElement('canvas');
+      tmp2.width = W; tmp2.height = H;
+      const t2 = tmp2.getContext('2d')!;
+      t2.drawImage(this.outlineCanvas!, 0, 0);
+      outlineCtx.globalCompositeOperation = 'copy';
+      (outlineCtx as any).filter = `blur(${this.OUTLINE_SOFTNESS}px)`;
+      outlineCtx.drawImage(tmp2, 0, 0);
+      (outlineCtx as any).filter = 'none';
+      outlineCtx.globalCompositeOperation = 'source-over';
+    }
+    outlineCtx.restore();
+
+    // --- 4) Composição final: fundo → contorno → webcam recortada ---
+    outCtx.save();
+    outCtx.clearRect(0, 0, W, H);
+
+    // Fundo
+    if (this.bgVideo && this.bgVideo.readyState >= 2) {
+      this.drawMediaCover(outCtx, this.bgVideo, W, H);
+    } else {
+      outCtx.fillStyle = '#000';
+      outCtx.fillRect(0, 0, W, H);
+    }
+
+    // Contorno da janela
+    outCtx.drawImage(this.outlineCanvas!, 0, 0, W, H);
+
+    // Webcam dentro da janela
+    outCtx.drawImage(this.personCanvas!, 0, 0, W, H);
+
+    outCtx.restore();
+  }
+
+  // 🔧 path de JANELA EM ARCO (topo semicircular + laterais e base retas)
+  private archWindowPath(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number, w: number, h: number, r: number
+  ) {
+    // r = raio do arco superior; use r = w/2 para um arco perfeito (meia-lua).
+    const radius = Math.max(1, Math.min(r, w / 2));
+    const cx = x + w / 2;     // centro do arco
+    const cy = y + radius;    // y do centro do arco
+
+    ctx.beginPath();
+    // começa na lateral esquerda, logo abaixo do início do arco
+    ctx.moveTo(x, y + radius);
+    // arco superior da esquerda (π) para a direita (0)
+    ctx.arc(cx, cy, radius, Math.PI, 0, false);
+    // desce a lateral direita até a base reta
+    ctx.lineTo(x + w, y + h);
+    // base reta até a lateral esquerda
+    ctx.lineTo(x, y + h);
+    // sobe pela lateral esquerda até fechar na origem
+    ctx.closePath();
   }
 
   // --------------------------------------------------------------------------
