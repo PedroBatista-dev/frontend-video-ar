@@ -1,3 +1,4 @@
+// recording.component.ts
 import {
   Component, ElementRef, ViewChild, OnDestroy, OnInit, CUSTOM_ELEMENTS_SCHEMA, inject, PLATFORM_ID
 } from '@angular/core';
@@ -79,8 +80,8 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private readonly WINDOW_Y = 690;
   private readonly WINDOW_W = 275;
   private readonly WINDOW_H = 810;
-  // Raio do arco no topo. Para um arco perfeito (semicírculo), use W/2 (=540 com W=1080).
-  private readonly WINDOW_ARCH_RADIUS = 540;
+  // Raio do arco no topo. Para um arco perfeito (semicírculo), use W/2 (=WINDOW_W/2).
+  private readonly WINDOW_ARCH_RADIUS = this.WINDOW_W / 2;
 
   constructor(
     private router: Router,
@@ -160,7 +161,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private async startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        width: { ideal: 3840 },  // 👈 pode pedir 4K; a câmera usará o máximo suportado
+        width: { ideal: 3840 },  // pode pedir 4K; a câmera usará o máximo suportado
         height: { ideal: 2160 },
         frameRate: { ideal: 30 }
       },
@@ -196,7 +197,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     v.style.transformOrigin = 'center center';
     v.style.transform = `translate(-50%, -50%) rotate(${rotateDeg}deg)${mirrorScale}`;
     v.style.background = 'transparent';
-    v.style.objectFit = 'contain';
+    v.style.objectFit = 'cover';
     v.style.visibility = 'visible';
   }
 
@@ -236,7 +237,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
       this.renderCompositeWithFixedWindow();
       if (!this.haveEffect) {
         this.haveEffect = true;
-        if (this.previewVideo) this.previewVideo.style.visibility = 'hidden'; // esconde preview cru
+        if (this.previewVideo) {
+          this.previewVideo.style.visibility = 'hidden';
+          this.previewVideo.style.display = 'none'; // garante que não “vaze” por trás
+        }
       }
     } else {
       // 👤 Modo segmentação (com pessoa)
@@ -244,7 +248,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
         this.renderCompositeWithMask(this.lastMask);
         if (!this.haveEffect) {
           this.haveEffect = true;
-          if (this.previewVideo) this.previewVideo.style.visibility = 'hidden';
+          if (this.previewVideo) {
+            this.previewVideo.style.visibility = 'hidden';
+            this.previewVideo.style.display = 'none';
+          }
         }
       } else {
         const ctx = this.compositeCtx!;
@@ -270,18 +277,18 @@ export class RecordingComponent implements OnInit, OnDestroy {
     if (!vw || !vh) return;
 
     ctx.save();
-    ctx.clearRect(0, 0, 1080, this.H);
+    ctx.clearRect(0, 0, this.W, this.H);
 
     // Transforma coordenadas para desenhar preenchendo W×H
     if (this.ROTATE_CLOCKWISE) {
-      ctx.translate(1080 / 2, this.H / 2);
+      ctx.translate(this.W / 2, this.H / 2);
       ctx.rotate(90 * Math.PI / 180);
       if (this.MIRROR) ctx.scale(-1, 1); // espelha se necessário
-      ctx.drawImage(v, -this.H / 2, -1080 / 2, this.H, 1080);
+      ctx.drawImage(v, -this.H / 2, -this.W / 2, this.H, this.W);
     } else {
-      ctx.translate(1080 / 2, this.H / 2);
+      ctx.translate(this.W / 2, this.H / 2);
       if (this.MIRROR) ctx.scale(-1, 1);
-      ctx.drawImage(v, -1080 / 2, -this.H / 2, 1080, this.H);
+      ctx.drawImage(v, -this.W / 2, -this.H / 2, this.W, this.H);
     }
 
     ctx.restore();
@@ -413,7 +420,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     outCtx.save();
     outCtx.clearRect(0, 0, W, H);
 
-    // ⬇️ Aqui usamos CONTAIN pro vídeo de fundo (entra inteiro)
+    // Fundo (entra inteiro)
     if (this.bgVideo && this.bgVideo.readyState >= 2) {
       this.drawMediaContain(outCtx, this.bgVideo, W, H);
     } else {
@@ -461,13 +468,46 @@ export class RecordingComponent implements OnInit, OnDestroy {
     }
     matteCtx.restore();
 
-    // --- 2) Recorta a webcam pela janela ---
+    // --- 2) Webcam SOMENTE dentro da janela (clip) e encaixada por "cover" no retângulo da janela ---
     personCtx.save();
     personCtx.clearRect(0, 0, W, H);
-    personCtx.drawImage(this.inputCanvas!, 0, 0, W, H);
-    personCtx.globalCompositeOperation = 'destination-in';
-    personCtx.drawImage(this.matteCanvas!, 0, 0, W, H);
-    personCtx.globalCompositeOperation = 'source-over';
+
+    // recorta a área da janela em arco
+    this.archWindowPath(
+      personCtx,
+      this.WINDOW_X, this.WINDOW_Y, this.WINDOW_W, this.WINDOW_H, this.WINDOW_ARCH_RADIUS
+    );
+    personCtx.clip();
+
+    // calcular "cover" do inputCanvas para caber na janela (sem distorcer)
+    const srcW = this.inputCanvas!.width;   // = W
+    const srcH = this.inputCanvas!.height;  // = H
+    const winW = this.WINDOW_W;
+    const winH = this.WINDOW_H;
+
+    const winAR = winW / winH;
+    const srcAR = srcW / srcH;
+
+    let sx = 0, sy = 0, sw = srcW, sh = srcH;
+    if (srcAR > winAR) {
+      // fonte mais "larga" que a janela -> cortar laterais
+      const desiredW = srcH * winAR;
+      sx = (srcW - desiredW) / 2;
+      sw = desiredW;
+    } else {
+      // fonte mais "alta" -> cortar topo/baixo
+      const desiredH = srcW / winAR;
+      sy = (srcH - desiredH) / 2;
+      sh = desiredH;
+    }
+
+    // desenha somente na área da janela (nada do restante do canvas recebe webcam)
+    personCtx.drawImage(
+      this.inputCanvas!,  // já rotacionada/espelhada
+      sx, sy, sw, sh,
+      this.WINDOW_X, this.WINDOW_Y, winW, winH
+    );
+
     personCtx.restore();
 
     // --- 3) Gera o contorno da janela ---
@@ -515,7 +555,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     outCtx.save();
     outCtx.clearRect(0, 0, W, H);
 
-    // ⬇️ Aqui usamos CONTAIN pro vídeo de fundo (entra inteiro)
+    // Fundo (entra inteiro)
     if (this.bgVideo && this.bgVideo.readyState >= 2) {
       this.drawMediaContain(outCtx, this.bgVideo, W, H);
     } else {
@@ -526,7 +566,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     // Contorno da janela
     outCtx.drawImage(this.outlineCanvas!, 0, 0, W, H);
 
-    // Webcam dentro da janela
+    // Webcam dentro da janela (somente área clipada)
     outCtx.drawImage(this.personCanvas!, 0, 0, W, H);
 
     outCtx.restore();
@@ -594,7 +634,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
     this.recordedBlob = undefined;
     // Reexibe o preview cru ao reiniciar
     this.haveEffect = false;
-    if (this.previewVideo) this.previewVideo.style.visibility = 'visible';
+    if (this.previewVideo) {
+      this.previewVideo.style.visibility = 'visible';
+      this.previewVideo.style.display = '';
+    }
   }
 
   send() {
