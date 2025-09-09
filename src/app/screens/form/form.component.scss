@@ -8,7 +8,7 @@
     color: var(--text-primary-color);
     font-size: 32px;
     text-align: left;
-    margin-top: 40px;
+    margin-top: 20px;
     margin-bottom: 15px;
   }
 
@@ -46,7 +46,7 @@
   }
 
   .btn-secondary {
-    margin-top: 60px;
+    margin-top: 30px;
     color: #0d2a4a;
     font-family: 'Montserrat';
     font-size: 60px;
@@ -113,4 +113,8 @@ label {
 :host ::ng-deep .hg-button {
   height: 75px !important; /* altura das teclas */
   flex: 1 1 auto;
+}
+
+.logo-footer {
+  margin-top: 40px;
 }

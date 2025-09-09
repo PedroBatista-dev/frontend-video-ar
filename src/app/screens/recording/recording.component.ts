@@ -196,7 +196,7 @@ export class RecordingComponent implements OnInit, OnDestroy {
     v.style.transformOrigin = 'center center';
     v.style.transform = `translate(-50%, -50%) rotate(${rotateDeg}deg)${mirrorScale}`;
     v.style.background = 'transparent';
-    v.style.objectFit = 'cover';
+    v.style.objectFit = 'contain';
     v.style.visibility = 'visible';
   }
 
@@ -270,18 +270,18 @@ export class RecordingComponent implements OnInit, OnDestroy {
     if (!vw || !vh) return;
 
     ctx.save();
-    ctx.clearRect(0, 0, this.W, this.H);
+    ctx.clearRect(0, 0, 1080, this.H);
 
     // Transforma coordenadas para desenhar preenchendo W×H
     if (this.ROTATE_CLOCKWISE) {
-      ctx.translate(this.W / 2, this.H / 2);
+      ctx.translate(1080 / 2, this.H / 2);
       ctx.rotate(90 * Math.PI / 180);
       if (this.MIRROR) ctx.scale(-1, 1); // espelha se necessário
-      ctx.drawImage(v, -this.H / 2, -this.W / 2, this.H, this.W);
+      ctx.drawImage(v, -this.H / 2, -1080 / 2, this.H, 1080);
     } else {
-      ctx.translate(this.W / 2, this.H / 2);
+      ctx.translate(1080 / 2, this.H / 2);
       if (this.MIRROR) ctx.scale(-1, 1);
-      ctx.drawImage(v, -this.W / 2, -this.H / 2, this.W, this.H);
+      ctx.drawImage(v, -1080 / 2, -this.H / 2, 1080, this.H);
     }
 
     ctx.restore();
