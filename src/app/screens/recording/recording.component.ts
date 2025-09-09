@@ -75,10 +75,10 @@ export class RecordingComponent implements OnInit, OnDestroy {
   private readonly USE_FIXED_WINDOW = true;
 
   // Geometria da janela em arco (em px, no canvas 1440×1920)
-  private readonly WINDOW_X = 555;
-  private readonly WINDOW_Y = 750;
-  private readonly WINDOW_W = 330;
-  private readonly WINDOW_H = 750;
+  private readonly WINDOW_X = 582;
+  private readonly WINDOW_Y = 690;
+  private readonly WINDOW_W = 275;
+  private readonly WINDOW_H = 810;
   // Raio do arco no topo. Para um arco perfeito (semicírculo), use W/2 (=540 com W=1080).
   private readonly WINDOW_ARCH_RADIUS = 540;
 
