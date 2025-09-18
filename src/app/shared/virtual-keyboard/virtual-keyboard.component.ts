@@ -163,7 +163,7 @@ export class VirtualKeyboardComponent implements OnInit, OnDestroy {
     // Layout básico PT-BR (ABNT simplificado)
     default: {
       default: [
-        '¹ 2 3 4 5 6 7 8 9 0 {bksp}',
+        '1 2 3 4 5 6 7 8 9 0 {bksp}',
         'q w e r t y u i o p',
         'a s d f g h j k l ç',
         '{shift} z x c v b n m , . -',
